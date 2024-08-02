@@ -1,0 +1,124 @@
+classdef Denoise3DApp < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure        matlab.ui.Figure
+        LoadButton      matlab.ui.control.Button
+        DenoiseButton   matlab.ui.control.Button
+        SaveButton      matlab.ui.control.Button
+        VariableDropDown matlab.ui.control.DropDown
+    end
+    
+    properties (Access = private)
+        loadedData
+        noisyData
+        denoisedData
+        loadedFilePath  % Store the loaded file path
+    end
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Button pushed function: LoadButton
+        function LoadButtonPushed(app, event)
+            [file, path] = uigetfile('*.mat');
+            if isequal(file, 0)
+                disp('User selected Cancel');
+            else
+                fullFileName = fullfile(path, file);
+                app.loadedData = load(fullFileName);
+                app.loadedFilePath = fullFileName;  % Store the loaded file path
+                disp(['User selected: ', fullFileName]);
+                
+                % Update the dropdown menu with variable names
+                vars = fieldnames(app.loadedData);
+                app.VariableDropDown.Items = vars;
+                if ~isempty(vars)
+                    app.VariableDropDown.Value = vars{1};  % Set default selection
+                    app.noisyData = app.loadedData.(vars{1});
+                end
+            end
+        end
+
+        % Value changed function: VariableDropDown
+        function VariableDropDownValueChanged(app, event)
+            selectedVar = app.VariableDropDown.Value;
+            app.noisyData = app.loadedData.(selectedVar);
+            
+            % Display the noisy data in the Command Window
+            disp('Noisy Data:');
+            disp(app.noisyData);
+        end
+
+        % Button pushed function: DenoiseButton
+        function DenoiseButtonPushed(app, event)
+            if isempty(app.noisyData)
+                uialert(app.UIFigure, 'No data loaded!', 'Error');
+                return;
+            end
+            
+            % Denoise the data using a 3D Gaussian filter
+            h = fspecial3('gaussian', [3 3 3], 0.5);
+            app.denoisedData = imfilter(app.noisyData, h);
+            
+            % Get the path and file name of the original .mat file
+            [filepath, filename, ext] = fileparts(app.loadedFilePath);
+
+            % Define the new file name for the denoised data
+            denoisedFileName = [filename, '_denoised', ext];
+
+            % Construct the full path for saving the denoised data
+            denoisedFilePath = fullfile(filepath, denoisedFileName);
+
+            % Save the denoised data to a .mat file at the same location
+            save(denoisedFilePath, 'app.denoisedData');
+
+            % Display message indicating successful save
+            uialert(app.UIFigure, ['Denoised data saved to: ', denoisedFilePath], 'Denoising Complete');
+        end
+
+        % Button pushed function: SaveButton
+        function SaveButtonPushed(app, event)
+            if isempty(app.denoisedData)
+                uialert(app.UIFigure, 'No data denoised!', 'Error');
+                return;
+            end
+            
+            % Get the path and file name of the original .mat file
+            [filepath, filename, ext] = fileparts(app.loadedFilePath);
+
+            % Define the new file name for the denoised data
+            denoisedFileName = [filename, '_denoised', ext];
+
+            % Construct the full path for saving the denoised data
+            denoisedFilePath = fullfile(filepath, denoisedFileName);
+
+            % Save the denoised data to a .mat file at the same location
+            save(denoisedFilePath, 'app.denoisedData');
+
+            % Display message indicating successful save
+            uialert(app.UIFigure, ['Denoised data saved to: ', denoisedFilePath], 'Denoising Complete');
+        end
+    end
+
+    % App initialization and construction
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create UIFigure and hide until all components are created
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Position = [100 100 400 300];
+            app.UIFigure.Name = 'Denoise 3D Data App';
+
+            % Create LoadButton
+            app.LoadButton = uibutton(app.UIFigure, 'push');
+            app.LoadButton.ButtonPushedFcn = createCallbackFcn(app, @LoadButtonPushed, true);
+            app.LoadButton.Position = [50 50 100 30];
+            app.LoadButton.Text = 'Load File';
+
+            % Create VariableDropDown
+            app.VariableDropDown = uidropdown(app.UIFigure);
+            app.VariableDropDown.Position = [160 50 100 30];
+            app.VariableDropDown.ValueChangedFcn =
