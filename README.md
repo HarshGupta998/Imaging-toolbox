@@ -64,7 +64,7 @@ The app consists of the following components:
 
  
 Fig 1. User Interface
-
+![alt text](ui.png)
  
 Fig 2. After Processing
 ![alt text](image.png)
