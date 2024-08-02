@@ -64,10 +64,10 @@ The app consists of the following components:
 
  
 Fig 1. User Interface
-![alt text](image.png)
 
  
 Fig 2. After Processing
+![alt text](image.png)
 
 ## File Structure
 
